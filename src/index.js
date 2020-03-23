@@ -4,7 +4,9 @@ var oMoves = [];
 const winMoves = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7], [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]];
 var aiOptinalMoves = [];
 var is1VsAI = false;
-
+var xScore = [-1, -1, -1, -1, -1];
+var oScore = [-1, -1, -1, -1, -1];
+var round = 0;
 
 loadStyle();
 navBar();
@@ -65,12 +67,63 @@ function mainScreen() {
 }
 function startNewGame() {
   if (!!document.querySelector('#mainCard')) {
+    xScore = [-1, -1, -1, -1, -1];
+    oScore = [-1, -1, -1, -1, -1];
+    round = 0;
     document.querySelector('#mainCard').remove();
     boardGame();
+    scoreBoard();
+
   }
   else {
     resetGame();
   }
+}
+function getPlayerScoreTable(score) {
+  var scoreTable = ''
+  score.forEach((round) => {
+    if (round == -1)
+      return scoreTable += '<td></td>';
+    else if (round == 1)
+      return scoreTable += '<td><i class="fas fa-check text-success"></i></td>';
+    else
+      return scoreTable += '<td><i class="fas fa-times text-danger"></i></td>';
+  })
+  return scoreTable;
+}
+function scoreBoard() {
+  const element = document.createElement('div');
+  element.classList.add('card', 'board', 'mx-auto', 'mt-5');
+  element.setAttribute('id', 'scoreBoard');
+  element.innerHTML = `<div class="card-header">
+  <h3 class="mx-auto mt-3 float-left" id="statusScore">Score:</h3><button id="resetButton" type="button" class="float-right mt-3 btn btn-dark m-1 float-right"><i class="fas fa-redo-alt"></i> reset</button></div>
+  <div class="card-body">
+  <table class="table table-bordered text-center">
+  <thead class="thead-dark">
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">1</th>
+      <th scope="col">2</th>
+      <th scope="col">3</th>
+      <th scope="col">4</th>
+      <th scope="col">5</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">X</th>
+      ${getPlayerScoreTable(xScore)}
+    </tr>
+    <tr>
+      <th scope="row">O</th>
+      ${getPlayerScoreTable(oScore)}
+    </tr>
+  </tbody>
+</table>
+  </div>`
+  document.body.appendChild(element);
+  document.querySelector('#resetButton').addEventListener('click', resetGame);
+
 }
 function boardGame() {
   playerTurn = 'X';
@@ -79,7 +132,7 @@ function boardGame() {
   const element = document.createElement('div');
   element.classList.add('container', 'text-center', 'mt-5', 'bg-dark');
   element.setAttribute('id', 'boardGame');
-  element.innerHTML = `<div class="row text-white"><h3 class="mx-auto mt-3" id="status">X Turn</h3><button id="resetButton" type="button" class="btn btn-light m-1"><i class="fas fa-redo-alt"></i> reset</button></div>
+  element.innerHTML = `<div class="row text-white"><h3 class="mx-auto mt-3" id="status">X Turn</h3><button id="nextRound" type="button" class="collapse btn btn-light m-1 float-right"><i class="fas fa-arrow-right"></i> Next Round</button></div>
                         <div class="row">
                             <div class="col xoBox" value='1'>
                             </div>
@@ -106,11 +159,47 @@ function boardGame() {
                         </div>`
   document.body.appendChild(element);
   document.querySelectorAll('.xoBox').forEach((item) => item.addEventListener('click', setXOHandler));
-  document.querySelector('#resetButton').addEventListener('click', resetGame);
+  document.querySelector('#nextRound').addEventListener('click', nextRound);
+}
+function getScore() {
+  var x = 0, o = 0;
+  x = xScore.reduce((sum, score) => sum + score);
+  o = oScore.reduce((sum, score) => sum + score);
+  if (x > o) {
+    return `X win ${x} - ${o}`;
+  }
+  else if (o > x) {
+    return `O win ${o} - ${x}`;
+  }
+  else {
+    return `Draw ${x} - ${x}`;
+  }
+
+}
+function checkIfLastRoundAndUpdate() {
+  if (round == 4) {
+    !!document.querySelector('#scoreBoard') && document.body.removeChild(document.querySelector('#scoreBoard'));
+    scoreBoard();
+    !!document.querySelector('#boardGame') && document.body.removeChild(document.querySelector('#boardGame'));
+    document.querySelector('#statusScore').innerText = getScore();
+  }
+}
+function nextRound() {
+  !!document.querySelector('#boardGame') && document.body.removeChild(document.querySelector('#boardGame'));
+  !!document.querySelector('#scoreBoard') && document.body.removeChild(document.querySelector('#scoreBoard'));
+  boardGame();
+  scoreBoard();
+  document.querySelector('#nextRound').classList.add('collapse');
+  round++;
 }
 function resetGame() {
+  xScore = [-1, -1, -1, -1, -1];
+  oScore = [-1, -1, -1, -1, -1];
+  round = 0;
   !!document.querySelector('#boardGame') && document.body.removeChild(document.querySelector('#boardGame'));
+  !!document.querySelector('#scoreBoard') && document.body.removeChild(document.querySelector('#scoreBoard'));
   boardGame();
+  scoreBoard();
 }
 function setXOHandler(event) {
   var element = event.target;
@@ -134,17 +223,33 @@ function setXO(element) {
     document.querySelector('#status').innerText = playerTurn + ' Turn';
     element.removeEventListener('click', setXOHandler);
     if (checkIfSomeoneWin()) {
-      document.querySelector('#status').innerText = (playerTurn == 'X') ? 'O Win' : 'X Win';
+      if (playerTurn == 'X') {
+        document.querySelector('#status').innerText = 'O Win';
+        oScore[round] = 1;
+        xScore[round] = 0;
+      }
+      else {
+        document.querySelector('#status').innerText = 'X Win';
+        xScore[round] = 1;
+        oScore[round] = 0;
+      }
       document.querySelector('#status').parentNode.classList.add('xoBoxWin')
       document.querySelectorAll('.xoBox').forEach((item) => {
         item.removeEventListener('click', setXOHandler)
         item.classList.add('xoBoxEnd');
         item.classList.remove('xoBox');
       });
+      document.querySelector('#nextRound').classList.remove('collapse');
+      checkIfLastRoundAndUpdate();
     }
     else if (xMoves.length == 5) {
       document.querySelector('#status').innerText = 'Draw'
       document.querySelector('#status').parentNode.classList.add('xoBoxWin')
+      xScore[round] = 0;
+      oScore[round] = 0;
+      document.querySelector('#nextRound').classList.remove('collapse');
+      checkIfLastRoundAndUpdate();
+
     }
     else if (is1VsAI && playerTurn == 'O') {
       setAiMove();
