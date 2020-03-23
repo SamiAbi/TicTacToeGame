@@ -47,6 +47,7 @@ function navBar() {
 
 function mainScreen() {
   !!document.querySelector('#boardGame') && document.querySelector('#boardGame').remove();
+  !!document.querySelector('#scoreBoard') && document.body.removeChild(document.querySelector('#scoreBoard'));
   !!document.querySelector('#mainCard') && document.querySelector('#mainCard').remove();
   const element = document.createElement('div');
   element.classList.add('card', 'board', 'mx-auto', 'mt-5');
